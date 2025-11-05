@@ -1,0 +1,3 @@
+TOKEN = "8423618425:AAGslrdY8jGmiHdEt65dyoUkWWwU8roORjE"       # BotFather token
+ADMIN_ID = 668618297  
+GROUP_ID  = -4946035687
