@@ -484,14 +484,51 @@ def handle(msg):
 # === FLASK WEBHOOK ===
 @app.route('/' + TOKEN, methods=['POST'])
 def webhook():
-    update = request.get_json()
-    bot.handle(update)
-    return "ok"
+    try:
+        update = request.get_json()
+        if update:
+            # Handle callback queries
+            if 'callback_query' in update:
+                on_callback_query(update['callback_query'])
+            # Handle regular messages
+            elif 'message' in update:
+                handle(update['message'])
+        return "ok"
+    except Exception as e:
+        logger.exception("Error in webhook handler: %s", e)
+        return "error", 500
 
 
 @app.route('/')
 def index():
     return "Geeks Andijan HR Bot ishlamoqda..."
+
+
+@app.route('/setwebhook', methods=['GET'])
+def set_webhook():
+    """Set webhook URL - Call this after deploying to set webhook"""
+    try:
+        # Replace with your actual domain
+        webhook_url = request.args.get('url')
+        if not webhook_url:
+            return "Please provide ?url= parameter with your full webhook URL (e.g., https://yourdomain.com/TOKEN)"
+        
+        bot.setWebhook(webhook_url)
+        return f"Webhook set to: {webhook_url}"
+    except Exception as e:
+        logger.exception("Error setting webhook: %s", e)
+        return f"Error: {str(e)}", 500
+
+
+@app.route('/deletewebhook', methods=['GET'])
+def delete_webhook():
+    """Delete webhook - Call this to remove webhook"""
+    try:
+        bot.setWebhook('')
+        return "Webhook deleted successfully"
+    except Exception as e:
+        logger.exception("Error deleting webhook: %s", e)
+        return f"Error: {str(e)}", 500
 
 
 # === LOCAL TEST ===
@@ -504,5 +541,12 @@ def run_polling():
 
 if __name__ == "__main__":
     ensure_db()
-    run_polling()
-    # Flask uchun: app.run(host="0.0.0.0", port=5000)
+    # Check if running in production (webhook mode) or development (polling mode)
+    import os
+    if os.environ.get('WEBHOOK_MODE', '').lower() == 'true':
+        # Webhook mode - Flask will handle requests
+        logger.info("🤖 Bot webhook rejimida ishlamoqda...")
+        app.run(host="0.0.0.0", port=5000)
+    else:
+        # Polling mode for local testing
+        run_polling()
