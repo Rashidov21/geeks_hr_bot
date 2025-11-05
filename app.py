@@ -1,6 +1,5 @@
 # bot_fixed.py
 import telepot
-from telepot.loop import MessageLoop
 from telepot.namedtuple import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 from flask import Flask, request
 import sqlite3, openpyxl, os, threading, time, traceback, logging
@@ -8,6 +7,13 @@ from config import TOKEN, ADMIN_ID, GROUP_ID
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Check if running in webhook mode
+WEBHOOK_MODE = os.environ.get('WEBHOOK_MODE', '').lower() == 'true'
+
+# Only import MessageLoop if not in webhook mode (to avoid conflicts)
+if not WEBHOOK_MODE:
+    from telepot.loop import MessageLoop
 
 bot = telepot.Bot(TOKEN)
 app = Flask(__name__)
@@ -508,31 +514,70 @@ def index():
 def set_webhook():
     """Set webhook URL - Call this after deploying to set webhook"""
     try:
-        # Replace with your actual domain
         webhook_url = request.args.get('url')
         if not webhook_url:
             return "Please provide ?url= parameter with your full webhook URL (e.g., https://yourdomain.com/TOKEN)"
         
-        bot.setWebhook(webhook_url)
-        return f"Webhook set to: {webhook_url}"
+        # First, delete any existing webhook to avoid conflicts
+        try:
+            bot.setWebhook('')
+            logger.info("Deleted existing webhook")
+        except Exception as e:
+            logger.warning(f"Could not delete existing webhook: {e}")
+        
+        # Set the new webhook
+        result = bot.setWebhook(webhook_url)
+        if result:
+            return f"✅ Webhook set successfully to: {webhook_url}<br>Bot is ready to receive updates via webhook."
+        else:
+            return f"❌ Failed to set webhook. Check logs for details."
     except Exception as e:
         logger.exception("Error setting webhook: %s", e)
-        return f"Error: {str(e)}", 500
+        return f"❌ Error: {str(e)}", 500
 
 
 @app.route('/deletewebhook', methods=['GET'])
 def delete_webhook():
     """Delete webhook - Call this to remove webhook"""
     try:
-        bot.setWebhook('')
-        return "Webhook deleted successfully"
+        result = bot.setWebhook('')
+        if result:
+            return "✅ Webhook deleted successfully"
+        else:
+            return "❌ Failed to delete webhook"
     except Exception as e:
         logger.exception("Error deleting webhook: %s", e)
-        return f"Error: {str(e)}", 500
+        return f"❌ Error: {str(e)}", 500
+
+
+@app.route('/webhookinfo', methods=['GET'])
+def webhook_info():
+    """Get current webhook information"""
+    try:
+        info = bot.getWebhookInfo()
+        if info:
+            return f"""
+            <h3>Webhook Information:</h3>
+            <p><strong>URL:</strong> {info.get('url', 'Not set')}</p>
+            <p><strong>Pending Updates:</strong> {info.get('pending_update_count', 0)}</p>
+            <p><strong>Last Error Date:</strong> {info.get('last_error_date', 'N/A')}</p>
+            <p><strong>Last Error Message:</strong> {info.get('last_error_message', 'None')}</p>
+            """
+        else:
+            return "Could not retrieve webhook info"
+    except Exception as e:
+        logger.exception("Error getting webhook info: %s", e)
+        return f"❌ Error: {str(e)}", 500
 
 
 # === LOCAL TEST ===
 def run_polling():
+    """Run bot in polling mode (for local testing only)"""
+    if WEBHOOK_MODE:
+        logger.error("Cannot run polling mode when webhook is active!")
+        return
+    
+    from telepot.loop import MessageLoop
     MessageLoop(bot, {"chat": handle, "callback_query": on_callback_query}).run_as_thread()
     logger.info("🤖 Bot polling rejimida ishlamoqda...")
     while True:
@@ -541,12 +586,17 @@ def run_polling():
 
 if __name__ == "__main__":
     ensure_db()
-    # Check if running in production (webhook mode) or development (polling mode)
-    import os
-    if os.environ.get('WEBHOOK_MODE', '').lower() == 'true':
+    if WEBHOOK_MODE:
         # Webhook mode - Flask will handle requests
         logger.info("🤖 Bot webhook rejimida ishlamoqda...")
+        logger.info("⚠️  Make sure webhook is set! Visit /setwebhook?url=YOUR_URL")
         app.run(host="0.0.0.0", port=5000)
     else:
         # Polling mode for local testing
+        # First, delete any existing webhook to avoid conflicts
+        try:
+            bot.setWebhook('')
+            logger.info("Deleted existing webhook for polling mode")
+        except Exception as e:
+            logger.warning(f"Could not delete webhook: {e}")
         run_polling()
