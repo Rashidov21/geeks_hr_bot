@@ -627,8 +627,43 @@ def handle(msg: Dict) -> None:
         msg: Incoming message
     """
     try:
-        content_type, chat_type, chat_id = telepot.glance(msg)
-        text = msg.get("text") if isinstance(msg, dict) else None
+        # Safely extract message information
+        chat_id = None
+        chat_type = 'private'
+        content_type = 'unknown'
+        text = None
+        
+        # Extract chat_id - try multiple methods
+        if 'chat' in msg:
+            chat_id = msg['chat'].get('id')
+            chat_type = msg['chat'].get('type', 'private')
+        elif 'from' in msg:
+            chat_id = msg['from'].get('id')
+            chat_type = 'private'
+        
+        if chat_id is None:
+            logger.warning(f"Cannot extract chat_id from message. Keys: {list(msg.keys()) if isinstance(msg, dict) else 'not a dict'}")
+            return
+        
+        # Determine content type manually
+        if 'text' in msg:
+            content_type = 'text'
+            text = msg.get('text')
+        elif 'photo' in msg:
+            content_type = 'photo'
+        elif 'document' in msg:
+            content_type = 'document'
+        elif 'sticker' in msg:
+            content_type = 'sticker'
+        elif 'video' in msg:
+            content_type = 'video'
+        else:
+            # Try telepot.glance as fallback for other types
+            try:
+                content_type, chat_type, chat_id = telepot.glance(msg)
+            except (KeyError, TypeError) as e:
+                logger.warning(f"Could not determine content type: {e}. Message keys: {list(msg.keys())}")
+                return
         
         # Handle text messages
         if content_type == "text":
@@ -778,7 +813,7 @@ def handle(msg: Dict) -> None:
                                        "❗ Iltimos, to'g'ri ism-familiya kiriting (2-100 belgi).")
                         return
                     user["name"] = text.strip()
-                    user["username"] = msg["from"].get("username", "N/A")
+                    user["username"] = msg.get("from", {}).get("username", "N/A")
                     user["step"] = 3
                     set_user(chat_id, user)
                     send_with_retry(bot.sendMessage, chat_id, "📅 Yoshni kiriting:")
@@ -849,7 +884,7 @@ def handle(msg: Dict) -> None:
                     return
         
         # Handle photo
-        if content_type == "photo" and chat_id in users:
+        if content_type == "photo":
             user = get_user(chat_id)
             if user and user.get("step") == 7:
                 photo_id = msg["photo"][-1]["file_id"]
