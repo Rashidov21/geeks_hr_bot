@@ -936,7 +936,7 @@ def index():
 def set_webhook():
     """
     Set webhook URL endpoint.
-    Usage: /setwebhook?url=https://yourdomain.com/TOKEN
+    Usage: /setwebhook?url=https://hrbot.geeksandijan.uz/TOKEN
     """
     try:
         webhook_url = request.args.get('url')

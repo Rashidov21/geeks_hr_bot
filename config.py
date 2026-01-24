@@ -4,10 +4,25 @@ Loads configuration from environment variables or .env file
 """
 import os
 from typing import Optional
-from dotenv import load_dotenv
 
-# Load environment variables from .env file
-load_dotenv()
+try:
+    from dotenv import load_dotenv
+    # Try to load .env file with error handling
+    try:
+        load_dotenv(encoding='utf-8')
+    except UnicodeDecodeError:
+        # If UTF-8 fails, try to detect encoding or skip .env file
+        import warnings
+        warnings.warn("Could not read .env file with UTF-8 encoding. Using environment variables only.")
+        # Try alternative encodings
+        try:
+            load_dotenv(encoding='utf-16')
+        except:
+            pass
+except ImportError:
+    # If dotenv is not installed, continue with environment variables only
+    import warnings
+    warnings.warn("python-dotenv not installed. Using environment variables only.")
 
 # Telegram Bot Configuration
 TOKEN: str = os.getenv("BOT_TOKEN", "8423618425:AAGslrdY8jGmiHdEt65dyoUkWWwU8roORjE")
