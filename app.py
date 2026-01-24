@@ -456,7 +456,19 @@ def on_callback_query(msg: Dict) -> None:
         msg: Callback query message
     """
     try:
-        query_id, chat_id, data = telepot.glance(msg, flavor="callback_query")
+        # Safely extract callback query data
+        try:
+            query_id, chat_id, data = telepot.glance(msg, flavor="callback_query")
+        except (KeyError, TypeError) as e:
+            logger.warning(f"Could not extract callback query with glance: {e}. Trying manual extraction.")
+            # Manual extraction
+            query_id = msg.get('id')
+            chat_id = msg.get('from', {}).get('id')
+            data = msg.get('data')
+            
+            if not all([query_id, chat_id, data]):
+                logger.error(f"Incomplete callback query: query_id={query_id}, chat_id={chat_id}, data={data}")
+                return
         
         # Answer callback query
         try:
@@ -584,7 +596,21 @@ def handle_cv(msg: Dict, chat_id: int) -> None:
                            "❗ Ariza topilmadi. /start orqali qayta boshlang.")
             return
         
-        content_type, _, _ = telepot.glance(msg)
+        # Safely determine content type
+        content_type = 'unknown'
+        if 'document' in msg:
+            content_type = 'document'
+        elif 'text' in msg:
+            content_type = 'text'
+        else:
+            # Try telepot.glance as last resort
+            try:
+                content_type, _, _ = telepot.glance(msg)
+            except (KeyError, TypeError) as e:
+                logger.warning(f"Could not determine content type in handle_cv: {e}")
+                send_with_retry(bot.sendMessage, chat_id,
+                               "❗ Iltimos, CV faylini yuboring yoki 'Yo'q' deb yozing.")
+                return
         
         if content_type == "document":
             file_id = msg["document"]["file_id"]
@@ -658,12 +684,10 @@ def handle(msg: Dict) -> None:
         elif 'video' in msg:
             content_type = 'video'
         else:
-            # Try telepot.glance as fallback for other types
-            try:
-                content_type, chat_type, chat_id = telepot.glance(msg)
-            except (KeyError, TypeError) as e:
-                logger.warning(f"Could not determine content type: {e}. Message keys: {list(msg.keys())}")
-                return
+            # Unknown content type - log and return
+            logger.warning(f"Unknown content type. Message keys: {list(msg.keys())}")
+            logger.debug(f"Full message: {msg}")
+            return
         
         # Handle text messages
         if content_type == "text":
@@ -946,13 +970,47 @@ def webhook():
             return "Unauthorized", 401
         
         update = request.get_json()
-        if update:
-            # Handle callback queries
-            if 'callback_query' in update:
+        logger.debug(f"Received update: {update}")
+        
+        if not update:
+            logger.warning("Empty update received")
+            return "ok"
+        
+        # Handle callback queries
+        if 'callback_query' in update:
+            logger.info("Processing callback_query")
+            try:
                 on_callback_query(update['callback_query'])
-            # Handle regular messages
-            elif 'message' in update:
+            except Exception as e:
+                logger.exception(f"Error processing callback_query: {e}")
+        
+        # Handle regular messages
+        elif 'message' in update:
+            logger.info(f"Processing message from chat_id: {update['message'].get('chat', {}).get('id')}")
+            try:
                 handle(update['message'])
+            except Exception as e:
+                logger.exception(f"Error processing message: {e}")
+        
+        # Handle edited messages
+        elif 'edited_message' in update:
+            logger.info("Processing edited_message")
+            try:
+                handle(update['edited_message'])
+            except Exception as e:
+                logger.exception(f"Error processing edited_message: {e}")
+        
+        # Handle channel posts
+        elif 'channel_post' in update:
+            logger.info("Processing channel_post")
+            try:
+                handle(update['channel_post'])
+            except Exception as e:
+                logger.exception(f"Error processing channel_post: {e}")
+        
+        else:
+            logger.warning(f"Unknown update type: {list(update.keys())}")
+        
         return "ok"
     except Exception as e:
         logger.exception("Error in webhook handler: %s", e)
