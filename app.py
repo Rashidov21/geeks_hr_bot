@@ -387,14 +387,21 @@ def send_with_retry(func, *args, max_retries: int = 3, **kwargs) -> bool:
     """
     for attempt in range(max_retries):
         try:
-            func(*args, **kwargs)
+            result = func(*args, **kwargs)
+            logger.debug(f"Message sent successfully: {func.__name__}")
             return True
         except Exception as e:
+            logger.warning(f"Retry {attempt + 1}/{max_retries} for {func.__name__}: {e}")
             if attempt < max_retries - 1:
-                logger.warning(f"Retry {attempt + 1}/{max_retries} for {func.__name__}: {e}")
                 time.sleep(1)
             else:
-                logger.exception(f"Failed after {max_retries} attempts: {e}")
+                logger.error(f"Failed after {max_retries} attempts for {func.__name__}: {e}")
+                # Xatolikni admin'ga yuborish (agar bot.sendMessage bo'lmasa)
+                if func.__name__ != 'sendMessage':
+                    try:
+                        bot.sendMessage(ADMIN_ID, f"❌ {func.__name__} xatolik: {str(e)[:500]}")
+                    except:
+                        pass
                 return False
     return False
 
@@ -970,27 +977,43 @@ def webhook():
             return "Unauthorized", 401
         
         update = request.get_json()
-        logger.debug(f"Received update: {update}")
+        logger.info(f"Received update: update_id={update.get('update_id') if update else 'None'}")
         
         if not update:
             logger.warning("Empty update received")
-            return "ok"
+            return "ok", 200
+        
+        # Handle regular messages
+        if 'message' in update:
+            chat_id = update['message'].get('chat', {}).get('id')
+            text = update['message'].get('text', '')
+            logger.info(f"Processing message from chat_id: {chat_id}, text: {text[:50]}")
+            
+            try:
+                # Handle message
+                handle(update['message'])
+                logger.info(f"✅ Message processed successfully for chat_id: {chat_id}")
+            except Exception as e:
+                logger.exception(f"❌ Error processing message: {e}")
+                # Xatolikni admin'ga yuborish
+                try:
+                    bot.sendMessage(ADMIN_ID, f"❌ Message xatolik (chat_id: {chat_id}):\n{str(e)[:500]}")
+                except Exception as admin_error:
+                    logger.error(f"Could not send error to admin: {admin_error}")
         
         # Handle callback queries
-        if 'callback_query' in update:
+        elif 'callback_query' in update:
             logger.info("Processing callback_query")
             try:
                 on_callback_query(update['callback_query'])
+                logger.info("✅ Callback query processed successfully")
             except Exception as e:
-                logger.exception(f"Error processing callback_query: {e}")
-        
-        # Handle regular messages
-        elif 'message' in update:
-            logger.info(f"Processing message from chat_id: {update['message'].get('chat', {}).get('id')}")
-            try:
-                handle(update['message'])
-            except Exception as e:
-                logger.exception(f"Error processing message: {e}")
+                logger.exception(f"❌ Error processing callback_query: {e}")
+                # Xatolikni admin'ga yuborish
+                try:
+                    bot.sendMessage(ADMIN_ID, f"❌ Callback query xatolik: {str(e)[:500]}")
+                except:
+                    pass
         
         # Handle edited messages
         elif 'edited_message' in update:
@@ -1011,9 +1034,15 @@ def webhook():
         else:
             logger.warning(f"Unknown update type: {list(update.keys())}")
         
-        return "ok"
+        return "ok", 200
+        
     except Exception as e:
-        logger.exception("Error in webhook handler: %s", e)
+        logger.exception("❌ Error in webhook handler: %s", e)
+        # Xatolikni admin'ga yuborish
+        try:
+            bot.sendMessage(ADMIN_ID, f"❌ Webhook handler xatolik:\n{str(e)[:500]}")
+        except:
+            pass
         return "error", 500
 
 
