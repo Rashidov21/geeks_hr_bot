@@ -328,7 +328,14 @@ def export_support_tickets_to_excel(category: str | None = None) -> str | None:
     ]
     ws.append(headers)
     for row in rows:
-        ws.append(row)
+        # Convert sqlite3.Row to tuple/list
+        if hasattr(row, 'keys'):
+            # It's a Row object, convert to list
+            row_data = [row[i] for i in range(len(row))]
+        else:
+            # It's already a tuple/list
+            row_data = list(row)
+        ws.append(row_data)
     wb.save(file_name)
     return file_name
 
