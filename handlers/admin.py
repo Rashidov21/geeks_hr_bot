@@ -195,7 +195,7 @@ async def cmd_support_tickets(message: Message, command: CommandObject):
                 f"🎫 Ticket #{ticket_id}\n"
                 f"👤 User: @{username or 'N/A'} (ID: {user_id})\n"
                 f"📂 Kategoriya: {cat}\n"
-                f"📞 Telefon: {phone or 'ko'rsatilmagan'}\n"
+                f"📞 Telefon: {phone or 'korsatilmagan'}\n"
                 f"❓ Savol: {(question or 'Ovozli xabar').strip()[:80]}...\n"
                 f"⏰ {created_at}\n\n"
             )
