@@ -15,7 +15,7 @@ from aiogram.types import (
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 
-from config import ADMIN_ID, GROUP_ID
+from config import ADMIN_ID, GROUP_ID, ADMIN_IDS
 from db import save_application
 from handlers.utils import validate_phone, validate_age, validate_name
 
@@ -42,26 +42,50 @@ class HRForm(StatesGroup):
 
 
 # Helper function to send application to admin
+def escape_html(text: str | None) -> str:
+    """Escape HTML special characters to prevent injection."""
+    if not text:
+        return ""
+    return (
+        str(text)
+        .replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace('"', "&quot;")
+        .replace("'", "&#39;")
+    )
+
+
 async def send_application_to_admin(bot, data: dict) -> None:
     """Send application notification to admin and group."""
+    # Escape HTML to prevent injection
+    name = escape_html(data.get('name'))
+    age = escape_html(data.get('age'))
+    phone = escape_html(data.get('phone'))
+    vacancy = escape_html(data.get('vacancy'))
+    subject = escape_html(data.get('subject'))
+    experience = escape_html(data.get('experience'))
+    workplace = escape_html(data.get('workplace'))
+    username = escape_html(data.get('username'))
+    
     text = (
         "📥 <b>Yangi ariza</b>\n\n"
-        f"👤 Ism: {data.get('name')}\n"
-        f"📅 Yosh: {data.get('age')}\n"
-        f"📞 Tel: {data.get('phone')}\n"
-        f"🏢 Vakansiya: {data.get('vacancy')}\n"
+        f"👤 Ism: {name}\n"
+        f"📅 Yosh: {age}\n"
+        f"📞 Tel: {phone}\n"
+        f"🏢 Vakansiya: {vacancy}\n"
     )
 
     if data.get("vacancy") == "Mentor":
-        text += f"📚 Yo'nalish: {data.get('subject')}\n"
-        text += f"💼 Tajriba: {data.get('experience')}\n"
+        text += f"📚 Yo'nalish: {subject}\n"
+        text += f"💼 Tajriba: {experience}\n"
     else:
-        text += f"💼 Tajriba: {data.get('experience')}\n"
-        text += f"🏭 Ish joyi: {data.get('workplace')}\n"
+        text += f"💼 Tajriba: {experience}\n"
+        text += f"🏭 Ish joyi: {workplace}\n"
 
-    text += f"🔗 Username: @{data.get('username', 'N/A')}"
+    text += f"🔗 Username: @{username if username else 'N/A'}"
 
-    for chat in (ADMIN_ID, GROUP_ID):
+    for chat in ADMIN_IDS + [GROUP_ID]:
         try:
             await bot.send_message(chat_id=chat, text=text)
             if data.get("photo_id"):
@@ -206,7 +230,14 @@ async def process_workplace(message: Message, state: FSMContext):
 @router.message(HRForm.uploading_photo, F.photo)
 async def process_photo(message: Message, state: FSMContext):
     """Process photo upload."""
-    photo_id = message.photo[-1].file_id
+    # Validate photo size (max 10MB for Telegram, but we check file_size if available)
+    photo = message.photo[-1]
+    # Telegram automatically compresses photos, so we just check if it exists
+    if not photo:
+        await message.answer("❗ Rasm yuborilmadi. Iltimos, rasm yuboring.")
+        return
+    
+    photo_id = photo.file_id
     await state.update_data(photo_id=photo_id)
     await state.set_state(HRForm.uploading_cv)
     await message.answer(
@@ -224,7 +255,32 @@ async def process_photo_invalid(message: Message, state: FSMContext):
 @router.message(HRForm.uploading_cv, F.document)
 async def process_cv_document(message: Message, state: FSMContext):
     """Process CV document upload."""
-    cv_id = message.document.file_id
+    doc = message.document
+    if not doc:
+        await message.answer("❗ CV fayl topilmadi. Iltimos, qayta yuboring.")
+        return
+    
+    # Check file size (max 20MB for Telegram, but we warn if > 10MB)
+    max_size = 10 * 1024 * 1024  # 10MB
+    if doc.file_size and doc.file_size > max_size:
+        await message.answer(
+            "❗ CV fayl hajmi juda katta (10MB dan oshmasligi kerak).\n"
+            "Iltimos, faylni siqib yoki boshqa formatda yuboring."
+        )
+        return
+    
+    # Check file extension (optional, but recommended)
+    allowed_extensions = {'.pdf', '.doc', '.docx', '.txt', '.rtf'}
+    if doc.file_name:
+        file_ext = '.' + doc.file_name.split('.')[-1].lower()
+        if file_ext not in allowed_extensions:
+            await message.answer(
+                f"❗ CV fayl formati qo'llab-quvvatlanmaydi.\n"
+                f"Qo'llab-quvvatlanadigan formatlar: PDF, DOC, DOCX, TXT, RTF"
+            )
+            return
+    
+    cv_id = doc.file_id
     await state.update_data(cv_file_id=cv_id)
     await finish_application(message, state)
 
@@ -257,10 +313,14 @@ async def finish_application(message: Message, state: FSMContext):
         await message.answer(
             "✅ Rahmat! Arizangiz qabul qilindi. Tez orada siz bilan bog'lanamiz."
         )
+    except ValueError as e:
+        # Duplicate application or validation error
+        logger.warning(f"Application validation error: {e}")
+        await message.answer(f"❗ {str(e)}")
     except Exception as e:
         logger.exception(f"Error saving application: {e}")
         await message.answer(
-            "❗ Arizani saqlashda xatolik yuz berdi. Iltimos, qayta urinib ko'ring."
+            "❗ Arizani saqlashda xatolik yuz berdi. Iltimos, qayta urinib ko'ring yoki adminga murojaat qiling."
         )
 
     await state.clear()

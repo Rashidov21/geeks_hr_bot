@@ -73,10 +73,16 @@ async def on_shutdown(app: web.Application):
 def create_app() -> web.Application:
     """Create aiohttp application with webhook handler."""
     app = web.Application()
-    SimpleRequestHandler(
-        dispatcher=dp, bot=bot, secret_token=WEBHOOK_SECRET
-    ).register(app, path=WEBHOOK_PATH)
-    setup_application(app, dp, bot=bot)
+    
+    try:
+        SimpleRequestHandler(
+            dispatcher=dp, bot=bot, secret_token=WEBHOOK_SECRET
+        ).register(app, path=WEBHOOK_PATH)
+        setup_application(app, dp, bot=bot)
+    except Exception as e:
+        logger.exception(f"Error setting up webhook handler: {e}")
+        raise
+    
     app.on_startup.append(on_startup)
     app.on_shutdown.append(on_shutdown)
 
@@ -86,6 +92,9 @@ def create_app() -> web.Application:
 
     app.router.add_get("/", health)
     app.router.add_get("/health", health)
+    
+    # Note: aiogram dispatcher already handles most errors
+    # setup_application sets up error handlers automatically
 
     return app
 

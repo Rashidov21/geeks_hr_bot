@@ -7,7 +7,7 @@ from aiogram import Router, F
 from aiogram.filters import Command, CommandObject
 from aiogram.types import Message, FSInputFile
 
-from config import ADMIN_ID, SUPPORT_GROUP_ID
+from config import ADMIN_ID, SUPPORT_GROUP_ID, is_admin, ADMIN_IDS
 from db import get_last_applicants, get_all_applicants, get_support_tickets, export_support_tickets_to_excel
 import openpyxl
 
@@ -58,7 +58,7 @@ async def export_to_excel_file(vacancy: str | None = None) -> str | None:
 @router.message(Command("last"))
 async def cmd_last(message: Message, command: CommandObject):
     """Handle /last command for admin."""
-    if message.chat.id != ADMIN_ID:
+    if not is_admin(message.chat.id):
         return
     vacancy = None
     if command.args:
@@ -81,7 +81,7 @@ async def cmd_last(message: Message, command: CommandObject):
 @router.message(Command("export"))
 async def cmd_export(message: Message, command: CommandObject):
     """Handle /export command for admin."""
-    if message.chat.id != ADMIN_ID:
+    if not is_admin(message.chat.id):
         return
     vacancy = None
     if command.args:
@@ -90,18 +90,26 @@ async def cmd_export(message: Message, command: CommandObject):
     if not file_name:
         await message.answer(f"{vacancy or 'Umumiy'} bo'yicha ariza topilmadi.")
         return
+    file = None
     try:
         file = FSInputFile(file_name)
         await message.answer_document(file)
+    except Exception as e:
+        logger.exception(f"Error sending export file: {e}")
+        await message.answer(f"❌ Faylni yuborishda xatolik: {e}")
     finally:
-        if os.path.exists(file_name):
-            os.remove(file_name)
+        # Always cleanup file
+        if file_name and os.path.exists(file_name):
+            try:
+                os.remove(file_name)
+            except Exception as e:
+                logger.warning(f"Could not remove file {file_name}: {e}")
 
 
 @router.message(F.text == "📋 Oxirgi arizalar")
 async def last_button(message: Message):
     """Handle 'Last applications' button for admin."""
-    if message.chat.id != ADMIN_ID:
+    if not is_admin(message.chat.id):
         return
     rows = get_last_applicants(limit=5)
     if not rows:
@@ -118,24 +126,32 @@ async def last_button(message: Message):
 @router.message(F.text == "📤 Export")
 async def export_button(message: Message):
     """Handle 'Export' button for admin."""
-    if message.chat.id != ADMIN_ID:
+    if not is_admin(message.chat.id):
         return
     file_name = await export_to_excel_file()
     if not file_name:
         await message.answer("Arizalar topilmadi.")
         return
+    file = None
     try:
         file = FSInputFile(file_name)
         await message.answer_document(file)
+    except Exception as e:
+        logger.exception(f"Error sending export file: {e}")
+        await message.answer(f"❌ Faylni yuborishda xatolik: {e}")
     finally:
-        if os.path.exists(file_name):
-            os.remove(file_name)
+        # Always cleanup file
+        if file_name and os.path.exists(file_name):
+            try:
+                os.remove(file_name)
+            except Exception as e:
+                logger.warning(f"Could not remove file {file_name}: {e}")
 
 
 @router.message(F.text == "📨 Support murojaatlar")
 async def support_tickets_button(message: Message):
     """Handle 'Support murojaatlar' button for admin."""
-    if message.chat.id != ADMIN_ID:
+    if not is_admin(message.chat.id):
         return
     
     try:
@@ -164,7 +180,7 @@ async def support_tickets_button(message: Message):
 @router.message(F.text == "📥 Export Support")
 async def export_support_button(message: Message):
     """Handle 'Export Support' button for admin."""
-    if message.chat.id != ADMIN_ID:
+    if not is_admin(message.chat.id):
         return
 
     file_name = export_support_tickets_to_excel()
@@ -172,12 +188,20 @@ async def export_support_button(message: Message):
         await message.answer("Support so'rovlar topilmadi.")
         return
 
+    file = None
     try:
         file = FSInputFile(file_name)
         await message.answer_document(file)
+    except Exception as e:
+        logger.exception(f"Error sending export file: {e}")
+        await message.answer(f"❌ Faylni yuborishda xatolik: {e}")
     finally:
-        if os.path.exists(file_name):
-            os.remove(file_name)
+        # Always cleanup file
+        if file_name and os.path.exists(file_name):
+            try:
+                os.remove(file_name)
+            except Exception as e:
+                logger.warning(f"Could not remove file {file_name}: {e}")
 
 
 @router.message(Command("answer"))
@@ -187,7 +211,7 @@ async def cmd_answer(message: Message, command: CommandObject):
     Usage: /answer <user_id> <reply_text>
     """
     # Only allow from admin or support group
-    if message.chat.id not in (ADMIN_ID, SUPPORT_GROUP_ID):
+    if message.chat.id != SUPPORT_GROUP_ID and not is_admin(message.chat.id):
         return
 
     if not command.args:
@@ -205,15 +229,30 @@ async def cmd_answer(message: Message, command: CommandObject):
         )
         return
 
+    def escape_html(text: str | None) -> str:
+        """Escape HTML special characters to prevent injection."""
+        if not text:
+            return ""
+        return (
+            str(text)
+            .replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace('"', "&quot;")
+            .replace("'", "&#39;")
+        )
+    
     try:
         user_id = int(parts[0])
         reply_text = parts[1]
+        # Escape HTML in reply text
+        reply_text = escape_html(reply_text)
     except ValueError:
         await message.answer("❌ user_id raqam bo'lishi kerak.")
         return
 
     try:
-        await message.bot.send_message(chat_id=user_id, text=reply_text)
+        await message.bot.send_message(chat_id=user_id, text=reply_text, parse_mode="HTML")
         await message.answer(f"✅ Javob foydalanuvchiga (ID: {user_id}) yuborildi.")
     except Exception as e:
         logger.exception(f"Error sending reply to user {user_id}: {e}")
@@ -226,7 +265,7 @@ async def cmd_answer(message: Message, command: CommandObject):
 @router.message(Command("support_tickets"))
 async def cmd_support_tickets(message: Message, command: CommandObject):
     """Show last support tickets for admin (optionally filtered by category)."""
-    if message.chat.id != ADMIN_ID:
+    if not is_admin(message.chat.id):
         return
 
     category = None
@@ -266,7 +305,7 @@ async def cmd_export_support(message: Message, command: CommandObject):
     Export support tickets to Excel (optionally by category).
     Usage: /export_support [Kategoriya]
     """
-    if message.chat.id != ADMIN_ID:
+    if not is_admin(message.chat.id):
         return
 
     category = None
@@ -278,9 +317,17 @@ async def cmd_export_support(message: Message, command: CommandObject):
         await message.answer(f"{category or 'Umumiy'} bo'yicha support so'rovlar topilmadi.")
         return
 
+    file = None
     try:
         file = FSInputFile(file_name)
         await message.answer_document(file)
+    except Exception as e:
+        logger.exception(f"Error sending export file: {e}")
+        await message.answer(f"❌ Faylni yuborishda xatolik: {e}")
     finally:
-        if os.path.exists(file_name):
-            os.remove(file_name)
+        # Always cleanup file
+        if file_name and os.path.exists(file_name):
+            try:
+                os.remove(file_name)
+            except Exception as e:
+                logger.warning(f"Could not remove file {file_name}: {e}")

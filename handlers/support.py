@@ -41,15 +41,30 @@ class SupportForm(StatesGroup):
 def is_working_hours() -> bool:
     """
     Check if current time is within working hours (09:00-19:00).
-    Uses UTC+5 (Uzbekistan timezone).
+    Uses timezone from config.
     """
     from datetime import timezone, timedelta
-    # Uzbekistan timezone (UTC+5)
-    uz_tz = timezone(timedelta(hours=5))
-    current_time = datetime.now(uz_tz)
+    from config import TIMEZONE_OFFSET
+    # Timezone from config (default UTC+5)
+    tz = timezone(timedelta(hours=TIMEZONE_OFFSET))
+    current_time = datetime.now(tz)
     current_hour = current_time.hour
     # Working hours: 9:00 - 19:00 (Dushanba - Shanba)
     return 9 <= current_hour < 19
+
+
+def escape_html(text: str | None) -> str:
+    """Escape HTML special characters to prevent injection."""
+    if not text:
+        return ""
+    return (
+        str(text)
+        .replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace('"', "&quot;")
+        .replace("'", "&#39;")
+    )
 
 
 async def send_ticket_to_support_group(
@@ -60,18 +75,24 @@ async def send_ticket_to_support_group(
     is_night = not is_working_hours()
     night_label = "[Night queue] " if is_night else ""
     
+    # Escape HTML to prevent injection
+    safe_username = escape_html(username)
+    safe_phone = escape_html(phone)
+    safe_category = escape_html(category)
+    safe_question = escape_html(question)
+    
     text = (
         f"{night_label}🎫 <b>Support Ticket #{ticket_id}</b>\n\n"
-        f"👤 User: @{username or 'N/A'} (ID: {user_id})\n"
-        f"📂 Kategoriya: {category}\n"
+        f"👤 User: @{safe_username or 'N/A'} (ID: {user_id})\n"
+        f"📂 Kategoriya: {safe_category}\n"
     )
     
     if phone:
-        text += f"📞 Telefon: {phone}\n"
+        text += f"📞 Telefon: {safe_phone}\n"
     else:
         text += "📞 Telefon: ko'rsatilmagan\n"
     
-    text += f"\n❓ Savol:\n{question}"
+    text += f"\n❓ Savol:\n{safe_question}"
     
     if voice_id:
         text += f"\n\n🎤 Ovozli xabar mavjud (file_id: {voice_id})"
@@ -134,17 +155,22 @@ async def process_question_text(message: Message, state: FSMContext):
     
     await state.update_data(question=question, question_voice_id=None)
     
-    # Check if phone number is mentioned in question (simple check)
-    # Extract potential phone numbers from text
-    phone_pattern = r'\+?998\d{9}|\d{9,12}'
-    phone_matches = re.findall(phone_pattern, question)
+    # Check if phone number is mentioned in question (improved pattern)
+    # Extract potential phone numbers from text - matches various formats
+    # Matches: +998901234567, 998901234567, 901234567, +998 90 123 45 67, etc.
+    phone_pattern = r'\+?998\s*\d{2}\s*\d{3}\s*\d{2}\s*\d{2}|\+?998\d{9}|998\d{9}|\d{9,12}'
+    # Remove spaces and dashes for matching
+    cleaned_question = question.replace(' ', '').replace('-', '').replace('(', '').replace(')', '')
+    phone_matches = re.findall(phone_pattern, cleaned_question)
     phone_in_text = False
     if phone_matches:
         # Try to validate the first match
         for match in phone_matches:
-            if validate_phone(match):
+            # Clean the match
+            cleaned_match = re.sub(r'[\s\-\(\)]', '', match)
+            if validate_phone(cleaned_match):
                 phone_in_text = True
-                await state.update_data(phone=match)
+                await state.update_data(phone=cleaned_match)
                 break
     
     if not phone_in_text:

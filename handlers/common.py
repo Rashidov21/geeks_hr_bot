@@ -14,7 +14,7 @@ from aiogram.types import (
 )
 from aiogram.fsm.context import FSMContext
 
-from config import ADMIN_ID
+from config import ADMIN_ID, is_admin
 from handlers.hr import cmd_hr_start
 from handlers.courses import COURSES
 
@@ -108,7 +108,7 @@ async def cmd_start(message: Message, state: FSMContext):
     await state.clear()
     chat_id = message.chat.id
 
-    if chat_id == ADMIN_ID:
+    if is_admin(chat_id):
         # Admin panel - alohida admin menu
         admin_reply_kb = ReplyKeyboardMarkup(
             keyboard=[

@@ -134,6 +134,24 @@ def ensure_db() -> None:
             """
             )
             
+            # Create indexes for better performance
+            indexes = [
+                "CREATE INDEX IF NOT EXISTS idx_applicants_vacancy ON applicants(vacancy)",
+                "CREATE INDEX IF NOT EXISTS idx_applicants_created_at ON applicants(created_at)",
+                "CREATE INDEX IF NOT EXISTS idx_support_tickets_category ON support_tickets(category)",
+                "CREATE INDEX IF NOT EXISTS idx_support_tickets_user_id ON support_tickets(user_id)",
+                "CREATE INDEX IF NOT EXISTS idx_support_tickets_created_at ON support_tickets(created_at)",
+                "CREATE INDEX IF NOT EXISTS idx_course_leads_course_name ON course_leads(course_name)",
+                "CREATE INDEX IF NOT EXISTS idx_course_leads_created_at ON course_leads(created_at)",
+            ]
+            for index_sql in indexes:
+                try:
+                    c.execute(index_sql)
+                except Exception as e:
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.warning(f"Could not create index: {e}")
+            
             conn.commit()
     except Exception as e:
         import logging
@@ -145,15 +163,41 @@ def ensure_db() -> None:
 def save_application(data: Dict[str, Any]) -> int:
     """
     Insert new application and return inserted id.
+    Checks for duplicate applications (same phone + vacancy within 24 hours).
     
     Args:
         data: Dictionary containing application data
     
     Returns:
-        Inserted row ID
+        Inserted row ID, or raises ValueError if duplicate found
     """
     with db_connection() as conn:
         c = conn.cursor()
+        
+        # Check for duplicate: same phone + vacancy within last 24 hours
+        phone = data.get("phone")
+        vacancy = data.get("vacancy")
+        if phone and vacancy:
+            c.execute(
+                """
+                SELECT id, created_at FROM applicants
+                WHERE phone = ? AND vacancy = ?
+                AND created_at > datetime('now', '-24 hours')
+                ORDER BY created_at DESC
+                LIMIT 1
+            """,
+                (phone, vacancy),
+            )
+            duplicate = c.fetchone()
+            if duplicate:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.warning(f"Duplicate application detected: phone={phone}, vacancy={vacancy}")
+                raise ValueError(
+                    "Siz bu vakansiya bo'yicha so'nggi 24 soat ichida ariza topshirgansiz. "
+                    "Iltimos, biroz kuting yoki boshqa vakansiya tanlang."
+                )
+        
         c.execute(
             """
             INSERT INTO applicants
@@ -302,12 +346,18 @@ def get_support_tickets(limit: int = 5, category: str | None = None) -> List[Tup
         return c.fetchall()
 
 
-def export_support_tickets_to_excel(category: str | None = None) -> str | None:
+def export_support_tickets_to_excel(category: str | None = None, limit: int = 5000) -> str | None:
     """
     Export support tickets to Excel. Returns file path or None.
+    
+    Args:
+        category: Filter by category (optional)
+        limit: Maximum number of records to export (default: 5000, max: 10000)
     """
     import openpyxl
-    rows = get_support_tickets(limit=1000, category=category)
+    # Limit to prevent memory issues
+    limit = min(limit, 10000)
+    rows = get_support_tickets(limit=limit, category=category)
     if not rows:
         return None
 
