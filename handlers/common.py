@@ -117,6 +117,10 @@ async def cmd_start(message: Message, state: FSMContext):
                     KeyboardButton(text="📤 Export"),
                 ],
                 [
+                    KeyboardButton(text="📨 Support murojaatlar"),
+                    KeyboardButton(text="📥 Export Support"),
+                ],
+                [
                     KeyboardButton(text="📝 Ishga ariza topshirish"),
                     KeyboardButton(text="🧑‍💻 Kurslar haqida ma'lumot"),
                 ],

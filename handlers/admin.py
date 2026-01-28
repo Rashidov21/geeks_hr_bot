@@ -132,6 +132,54 @@ async def export_button(message: Message):
             os.remove(file_name)
 
 
+@router.message(F.text == "📨 Support murojaatlar")
+async def support_tickets_button(message: Message):
+    """Handle 'Support murojaatlar' button for admin."""
+    if message.chat.id != ADMIN_ID:
+        return
+    
+    try:
+        tickets = get_support_tickets(limit=10)
+        if not tickets:
+            await message.answer("📨 Support so'rovlar topilmadi.")
+            return
+
+        text = "📨 Oxirgi support so'rovlar:\n\n"
+        for ticket in tickets:
+            ticket_id, user_id, username, phone, cat, question, voice_id, created_at = ticket
+            text += (
+                f"🎫 Ticket #{ticket_id}\n"
+                f"👤 User: @{username or 'N/A'} (ID: {user_id})\n"
+                f"📂 Kategoriya: {cat}\n"
+                f"📞 Telefon: {phone or 'korsatilmagan'}\n"
+                f"❓ Savol: {(question or 'Ovozli xabar').strip()[:80]}...\n"
+                f"⏰ {created_at}\n\n"
+            )
+        await message.answer(text)
+    except Exception as e:
+        logger.exception(f"Error getting support tickets: {e}")
+        await message.answer("❌ Xatolik: Support so'rovlarni olishda muammo.")
+
+
+@router.message(F.text == "📥 Export Support")
+async def export_support_button(message: Message):
+    """Handle 'Export Support' button for admin."""
+    if message.chat.id != ADMIN_ID:
+        return
+
+    file_name = export_support_tickets_to_excel()
+    if not file_name:
+        await message.answer("Support so'rovlar topilmadi.")
+        return
+
+    try:
+        file = FSInputFile(file_name)
+        await message.answer_document(file)
+    finally:
+        if os.path.exists(file_name):
+            os.remove(file_name)
+
+
 @router.message(Command("answer"))
 async def cmd_answer(message: Message, command: CommandObject):
     """
