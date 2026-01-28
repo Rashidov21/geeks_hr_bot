@@ -400,9 +400,54 @@ async def show_tariff_details(callback: CallbackQuery, state: FSMContext):
         "telefon raqamingizni qoldiring:"
     )
     
-    await callback.message.answer(text)
+    from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+    contact_kb = ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="📞 Kontaktni ulashish", request_contact=True)],
+        ],
+        resize_keyboard=True,
+        one_time_keyboard=True
+    )
+    await callback.message.answer(text, reply_markup=contact_kb)
     await state.set_state(CoursesForm.asking_phone)
     await callback.answer()
+
+
+@router.message(CoursesForm.asking_phone, F.contact)
+async def process_course_phone_contact(message: Message, state: FSMContext):
+    """Process phone from contact for course."""
+    if message.contact and message.contact.phone_number:
+        phone = message.contact.phone_number
+        # Add + if not present
+        if not phone.startswith('+'):
+            phone = '+' + phone
+        
+        data = await state.get_data()
+        
+        try:
+            from db import save_course_lead
+            lead_id = save_course_lead({
+                "user_id": message.from_user.id,
+                "username": message.from_user.username,
+                "course_name": data.get("course_name"),
+                "tariff": data.get("tariff"),
+                "phone": phone,
+            })
+            logger.info(f"Course lead saved with id {lead_id}")
+            
+            await message.answer(
+                "✅ Rahmat! Telefon raqamingiz qabul qilindi.\n\n"
+                "Menejerimiz tez orada siz bilan bog'lanadi va kurs haqida batafsil ma'lumot beradi."
+            )
+        except Exception as e:
+            logger.exception(f"Error saving course lead: {e}")
+            await message.answer(
+                "❗ Telefon raqamni saqlashda xatolik yuz berdi. Iltimos, qayta urinib ko'ring."
+            )
+        finally:
+            await state.clear()
+    else:
+        await message.answer("❗ Kontakt ma'lumotlari topilmadi. Iltimos, telefon raqamni qo'lda kiriting.")
 
 
 @router.message(CoursesForm.asking_phone)

@@ -175,7 +175,44 @@ async def process_age(message: Message, state: FSMContext):
         return
     await state.update_data(age=str(age))
     await state.set_state(HRForm.writing_phone)
-    await message.answer("📞 Telefon raqamingizni yuboring:")
+    
+    # Kontakt tugmasi bilan keyboard
+    contact_kb = ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="📞 Kontaktni ulashish", request_contact=True)],
+        ],
+        resize_keyboard=True,
+        one_time_keyboard=True
+    )
+    await message.answer("📞 Telefon raqamingizni yuboring yoki kontaktni ulashing:", reply_markup=contact_kb)
+
+
+@router.message(HRForm.writing_phone, F.contact)
+async def process_phone_contact(message: Message, state: FSMContext):
+    """Process phone from contact."""
+    if message.contact and message.contact.phone_number:
+        phone = message.contact.phone_number
+        # Add + if not present
+        if not phone.startswith('+'):
+            phone = '+' + phone
+        await state.update_data(phone=phone)
+        data = await state.get_data()
+        
+        if data.get("vacancy") == "Mentor":
+            await state.set_state(HRForm.choosing_subject)
+            keyboard = InlineKeyboardMarkup(
+                inline_keyboard=[
+                    [InlineKeyboardButton(text="SMM", callback_data="sub_SMM")],
+                    [InlineKeyboardButton(text="Mobilografiya", callback_data="sub_Mobilografiya")],
+                    [InlineKeyboardButton(text="Dasturlash", callback_data="sub_Dasturlash")],
+                ]
+            )
+            await message.answer("📚 Qaysi yo'nalish bo'yicha ishlamoqchisiz?", reply_markup=keyboard)
+        else:
+            await state.set_state(HRForm.uploading_photo)
+            await message.answer("📸 Endi o'zingizning rasmingizni yuboring:")
+    else:
+        await message.answer("❗ Kontakt ma'lumotlari topilmadi. Iltimos, telefon raqamni qo'lda kiriting.")
 
 
 @router.message(HRForm.writing_phone)

@@ -175,9 +175,18 @@ async def process_question_text(message: Message, state: FSMContext):
     
     if not phone_in_text:
         await state.set_state(SupportForm.asking_phone)
+        from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+        contact_kb = ReplyKeyboardMarkup(
+            keyboard=[
+                [KeyboardButton(text="📞 Kontaktni ulashish", request_contact=True)],
+            ],
+            resize_keyboard=True,
+            one_time_keyboard=True
+        )
         await message.answer(
             "📞 Agar tezroq bog'lanishimizni istasangiz, telefon raqamingizni ham yozib qoldiring:\n"
-            "(Yoki 'O'tkazib yuborish' tugmasini bosing)"
+            "Yoki 'O'tkazib yuborish' deb yozing.",
+            reply_markup=contact_kb
         )
     else:
         await finish_support_ticket(message, state)
@@ -190,10 +199,19 @@ async def process_question_voice(message: Message, state: FSMContext):
     await state.update_data(question="Ovozli xabar", question_voice_id=voice_id)
     await state.set_state(SupportForm.asking_phone)
     
+    from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+    contact_kb = ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="📞 Kontaktni ulashish", request_contact=True)],
+        ],
+        resize_keyboard=True,
+        one_time_keyboard=True
+    )
     await message.answer(
         "🎤 Ovozli xabaringiz qabul qilindi.\n\n"
         "📞 Agar tezroq bog'lanishimizni istasangiz, telefon raqamingizni ham yozib qoldiring:\n"
-        "(Yoki 'O'tkazib yuborish' tugmasini bosing)"
+        "Yoki 'O'tkazib yuborish' deb yozing.",
+        reply_markup=contact_kb
     )
 
 
@@ -203,12 +221,28 @@ async def process_question_invalid(message: Message, state: FSMContext):
     await message.answer("❗ Iltimos, savolingizni matn yoki ovozli xabar sifatida yuboring.")
 
 
+@router.message(SupportForm.asking_phone, F.contact)
+async def process_support_phone_contact(message: Message, state: FSMContext):
+    """Process phone from contact for support."""
+    if message.contact and message.contact.phone_number:
+        phone = message.contact.phone_number
+        # Add + if not present
+        if not phone.startswith('+'):
+            phone = '+' + phone
+        await state.update_data(phone=phone)
+        await finish_support_ticket(message, state)
+    else:
+        await message.answer("❗ Kontakt ma'lumotlari topilmadi. Iltimos, telefon raqamni qo'lda kiriting.")
+
+
 @router.message(SupportForm.asking_phone, F.text)
 async def process_support_phone(message: Message, state: FSMContext):
     """Process phone number for support."""
     text = message.text.strip().lower()
     
+    # Check for skip
     if text in ["o'tkazib yuborish", "otkazib yuborish", "skip", "o'tkaz"]:
+        await state.update_data(phone=None)
         await finish_support_ticket(message, state)
         return
     
@@ -218,7 +252,7 @@ async def process_support_phone(message: Message, state: FSMContext):
     else:
         await message.answer(
             "❗ Iltimos, to'g'ri telefon raqam kiriting yoki 'O'tkazib yuborish' deb yozing.\n"
-            "Misol: +998901234567"
+            "Misol: +998901234567 yoki 998901234567"
         )
 
 
