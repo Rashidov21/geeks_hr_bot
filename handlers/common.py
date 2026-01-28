@@ -30,7 +30,7 @@ FAQ_RESPONSES = {
         "• SMM: Narx menejer orqali\n"
         "• Mobilografiya: Narx menejer orqali\n"
         "• Computer Science: Oyiga 800 000 so'm\n"
-        "• Fullstack dasturlash: Oyiga 800 000 so'm\n\n"
+        "• Python Fullstack dasturlash: Oyiga 800 000 so'm\n\n"
         "Aniq narxlar va to'lov shartlari bo'yicha menejerimiz bilan bog'laning."
     ),
     "qancha turadi": (
@@ -39,7 +39,7 @@ FAQ_RESPONSES = {
         "• SMM: Narx menejer orqali\n"
         "• Mobilografiya: Narx menejer orqali\n"
         "• Computer Science: Oyiga 800 000 so'm\n"
-        "• Fullstack dasturlash: Oyiga 800 000 so'm\n\n"
+        "• Python Fullstack dasturlash: Oyiga 800 000 so'm\n\n"
         "Aniq narxlar va to'lov shartlari bo'yicha menejerimiz bilan bog'laning."
     ),
     "manzil": (

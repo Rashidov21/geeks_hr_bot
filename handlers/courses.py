@@ -31,7 +31,49 @@ Kurslar bo‘yicha barcha ma’lumotlar:
 COURSES = {
     "SMM": {
         "duration": "3 oy",
-        "price_info": "Narx menejer orqali",
+        "price_info": "Narxlar bo'yicha menejer bilan bog'laning",
+        "description": (
+            "📲 <b>SMM — Social Media Marketing (3 oy)</b>\n\n"
+            "Instagram, TikTok va Telegram orqali brend va savdoni o'stirish.\n\n"
+            "📝 <b>Kurs tavsifi</b>\n"
+            "Ushbu 3 oylik SMM kursi ijtimoiy tarmoqlarda professional sahifa yuritish, "
+            "kontent strategiya tuzish va mijoz olib keladigan marketingni o'rgatadi. "
+            "Kurs davomida siz Instagram, TikTok va Telegram bilan ishlash, reklama sozlash, "
+            "analitika va real loyihalar asosida SMM mutaxassis bo'lib chiqasiz.\n\n"
+            "🧭 <b>Kurs tuzilishi (3 oy)</b>\n"
+            "📌 1-oy: SMM Asoslari\n"
+            "• SMM nima va qanday ishlaydi\n"
+            "• Target auditoriyani aniqlash\n"
+            "• Profil va sahifa dizayni\n"
+            "• Kontent strategiya asoslari\n\n"
+            "🎨 2-oy: Kontent va Reklama\n"
+            "• Post, Story, Reels g'oyalari\n"
+            "• Video kontent va trendlar\n"
+            "• Instagram & Facebook reklama\n"
+            "• Copywriting (sotuvchi matnlar)\n\n"
+            "🚀 3-oy: Analitika va Amaliyot\n"
+            "• Statistika va natijani tahlil qilish\n"
+            "• Kontent reja (Content Plan)\n"
+            "• Mijoz bilan ishlash\n"
+            "• Real loyiha va portfolio\n\n"
+            "🎯 <b>Kimlar uchun?</b>\n"
+            "• SMM va ijtimoiy tarmoqlarda professional sahifa yuritishni o'rganmoqchi bo'lganlar uchun\n"
+            "• Biznesi yoki shaxsiy brendini onlayn rivojlantirmoqchi bo'lganlar uchun\n"
+            "• SMM orqali masofadan daromad topmoqchi bo'lganlar uchun\n\n"
+            "⭐ <b>Kurs afzalliklari</b>\n"
+            "• Kurs nol bilimdan boshlab tushuntiriladi\n"
+            "• Darslar real loyiha va amaliy topshiriqlar asosida\n"
+            "• Reklama va kontent orqali mijoz olib kelish o'rgatiladi\n"
+            "• Kurs oxirida portfolio va sertifikat beriladi\n"
+        ),
+        "faq": [
+            ("SMM kursi uchun tajriba kerakmi?", "Yo'q, kurs yangi boshlovchilar uchun mos."),
+            ("Qaysi platformalar o'rgatiladi?", "Instagram, TikTok va Telegram bilan ishlanadi."),
+            ("Reklama sozlashni ham o'rganamizmi?", "Ha, Instagram va Facebook reklamalari amaliy tarzda o'rgatiladi."),
+            ("Kursdan keyin qayerda ishlash mumkin?",
+             "Freelancer, SMM menejer yoki biznes sahifasi yurituvchi sifatida ishlash mumkin."),
+            ("Sertifikat beriladimi?", "Ha, kursni muvaffaqiyatli tugatganlarga sertifikat beriladi."),
+        ],
         "tariffs": {
             "Standart": {
                 "duration": "3 oy",
@@ -58,7 +100,48 @@ COURSES = {
     },
     "Mobilografiya": {
         "duration": "3 oy",
-        "price_info": "Narx menejer orqali",
+        "price_info": "Narxlar bo'yicha menejer bilan bog'laning",
+        "description": (
+            "📱 <b>Mobilografiya (3 oy)</b>\n\n"
+            "Telefon orqali professional video va kontent yaratish.\n\n"
+            "📝 <b>Kurs tavsifi</b>\n"
+            "Ushbu 3 oylik Mobilografiya kursi telefon orqali professional darajadagi video va foto "
+            "kontent yaratishni o'rgatadi. Siz suratga olish, kadr tuzish, yorug'lik bilan ishlash, "
+            "montaj va ijtimoiy tarmoqlar uchun kontent tayyorlashni amaliy mashg'ulotlar asosida o'zlashtirasiz.\n\n"
+            "🧭 <b>Kurs tuzilishi (3 oy)</b>\n"
+            "📸 1-oy: Suratga olish asoslari\n"
+            "• Telefon kamerasi sozlamalari\n"
+            "• Kadr tuzish va kompozitsiya\n"
+            "• Yorug'lik bilan ishlash\n"
+            "• Video va foto formatlari\n\n"
+            "✂️ 2-oy: Montaj va ishlov berish\n"
+            "• CapCut / VN / InShot bilan montaj\n"
+            "• Rang, effekt va o'tishlar\n"
+            "• Musiqa va ovoz bilan ishlash\n"
+            "• Video formatlari (Reels, Shorts, TikTok)\n\n"
+            "🚀 3-oy: Kontent va SMM\n"
+            "• Instagram, TikTok uchun kontent\n"
+            "• Kontent reja tuzish\n"
+            "• Trendlar va algoritmlar\n"
+            "• Portfolio video va real loyiha\n\n"
+            "🎯 <b>Kimlar uchun?</b>\n"
+            "• Telefon orqali video va foto olishni professional darajaga olib chiqmoqchi bo'lganlar uchun\n"
+            "• SMM, biznes yoki shaxsiy brend uchun sifatli kontent yaratmoqchi bo'lganlar uchun\n"
+            "• Kreativ fikrlashni rivojlantirib, mobilografiya orqali daromad topmoqchi bo'lganlar uchun\n\n"
+            "⭐ <b>Kurs afzalliklari</b>\n"
+            "• Kurs 0 dan boshlanadi va telefon yetarli bo'ladi\n"
+            "• Darslar to'liq amaliy mashg'ulotlar asosida o'tiladi\n"
+            "• Ijtimoiy tarmoqlar algoritmlariga mos real kontent yaratiladi\n"
+            "• Kurs oxirida portfolio va real loyiha bilan chiqiladi\n"
+        ),
+        "faq": [
+            ("Bu kurs uchun professional kamera kerakmi?", "Yo'q, oddiy smartfon yetarli bo'ladi."),
+            ("Qaysi ilovalar bilan ishlanadi?", "CapCut, VN, InShot kabi mashhur mobil montaj ilovalari bilan ishlanadi."),
+            ("Darslar nazariymi yoki amaliymi?", "Darslar asosan amaliy, har bir mavzu real video orqali o'rganiladi."),
+            ("Kurs tugagach nimalarni qila olaman?",
+             "Ijtimoiy tarmoqlar uchun professional video va kontent tayyorlay olasiz."),
+            ("Kurs yakunida sertifikat beriladimi?", "Ha, kursni muvaffaqiyatli tugatganlarga sertifikat beriladi."),
+        ],
         "tariffs": {
             "Standart": {
                 "duration": "3 oy",
@@ -76,6 +159,72 @@ COURSES = {
             },
             "Premium": {
                 "duration": "3 oy",
+                "support_mentor": "Mavjud",
+                "extra_lessons": "Mavjud",
+                "practice": "Mavjud",
+                "job_guarantee": "Mavjud",
+            },
+        },
+    },
+    "Python Fullstack dasturlash": {
+        "duration": "14 oy",
+        "price_info": "Oyiga 800 000 so'm (aniq narxlar menejer orqali)",
+        "description": (
+            "🐍 <b>Python Fullstack Dasturlash (14 oy)</b>\n\n"
+            "0 dan professional web dasturchigacha.\n\n"
+            "📝 <b>Kurs tavsifi</b>\n"
+            "Ushbu 14 oylik Python Fullstack kursi sizni IT olamiga to'liq olib kirish uchun mo'ljallangan. "
+            "Kurs davomida siz frontend va backend dasturlashni bosqichma-bosqich, amaliy mashg'ulotlar asosida "
+            "o'rganasiz. HTML, CSS, JavaScript, React, Python, Django, DRF va FastAPI orqali real web loyihalar "
+            "yaratishni o'zlashtirasiz.\n\n"
+            "🧭 <b>Kurs tuzilishi (14 oy)</b>\n"
+            "🎨 Frontend — 7 oy\n"
+            "• HTML & CSS – veb sahifalar tuzilishi va dizayni\n"
+            "• JavaScript – interaktiv va dinamik funksiyalar\n"
+            "• React – zamonaviy va tezkor UI yaratish\n\n"
+            "⚙️ Backend — 7 oy\n"
+            "• Python asoslari (3 oy) – syntax, OOP, mantiqiy fikrlash\n"
+            "• Django (2 oy) – kuchli va xavfsiz backend\n"
+            "• DRF & FastAPI (2 oy) – REST API va tezkor backend xizmatlar\n\n"
+            "🎯 <b>Kimlar uchun?</b>\n"
+            "• Dasturlashni mutlaqo 0 dan boshlamoqchi bo'lganlar\n"
+            "• Frontend va backendni birgalikda o'rganib, fullstack dasturchi bo'lishni istaganlar\n"
+            "• IT sohasida mustahkam kasb va barqaror daromadga erishmoqchi bo'lganlar\n\n"
+            "⭐ <b>Kurs afzalliklari</b>\n"
+            "• Kurs boshlang'ichdan professional darajagacha olib boradi\n"
+            "• Har bir texnologiya amaliy loyiha va real misollar orqali o'rgatiladi\n"
+            "• Frontend + Backend + API + Deploy — to'liq fullstack bilimlar\n"
+            "• Kurs oxirida real portfolio loyihalar va sertifikat\n"
+        ),
+        "faq": [
+            ("Bu kurs uchun oldindan dasturlash bilimi kerakmi?",
+             "Yo'q, kurs 0 dan boshlanadi va barcha mavzular oddiy tilda tushuntiriladi."),
+            ("14 oy davomida nimalarni o'rganaman?",
+             "Frontend (HTML, CSS, JS, React), Backend (Python, Django, DRF, FastAPI), Git, API va deploy."),
+            ("Darslar amaliymi yoki nazariyami?",
+             "Darslar asosan amaliy bo'lib, har bir modulda real loyiha qilinadi."),
+            ("Kurs tugagach ish topa olamanmi?",
+             "Kurs davomida portfolio yig'iladi, bu esa ish topishda katta ustunlik beradi."),
+            ("Kurs yakunida sertifikat beriladimi?",
+             "Ha, kursni muvaffaqiyatli yakunlagan o'quvchilarga sertifikat beriladi."),
+        ],
+        "tariffs": {
+            "Standart": {
+                "duration": "14 oy",
+                "support_mentor": "Mavjud",
+                "extra_lessons": "Yo'q",
+                "practice": "Mavjud",
+                "job_guarantee": "Yo'q",
+            },
+            "Intensiv": {
+                "duration": "14 oy",
+                "support_mentor": "Mavjud",
+                "extra_lessons": "Mavjud",
+                "practice": "Mavjud",
+                "job_guarantee": "Yo'q",
+            },
+            "Premium": {
+                "duration": "14 oy",
                 "support_mentor": "Mavjud",
                 "extra_lessons": "Mavjud",
                 "practice": "Mavjud",
@@ -85,7 +234,52 @@ COURSES = {
     },
     "Computer Science": {
         "duration": "3 oy",
-        "price_info": "Oyiga 800 000 so'm",
+        "price_info": "Narxlar bo'yicha menejer bilan bog'laning",
+        "description": (
+            "💻 <b>Computer Science (3 oy)</b>\n\n"
+            "IT'ga 0 dan kirish va mustahkam poydevor.\n\n"
+            "📝 <b>Kurs tavsifi</b>\n"
+            "Ushbu 3 oylik Computer Science kursi IT sohasiga butunlay 0 dan kirib kelmoqchi bo'lganlar uchun. "
+            "Kompyuter va internet asoslari, Office dasturlari, dizayn, UI/UX va IT mantiqi oddiy va tushunarli "
+            "tilda, ko'p amaliyot bilan o'rgatiladi. Bu kurs kelajakda dasturlash, dizayn yoki boshqa IT "
+            "yo'nalishlarni o'rganish uchun kuchli start beradi.\n\n"
+            "🧭 <b>Kurs tuzilishi (3 oy)</b>\n"
+            "🖥 1-oy: Kompyuter va Internet Asoslari\n"
+            "• Kompyuter qismlari va ishlash tamoyili\n"
+            "• Internet, DNS, IP, brauzerlar\n"
+            "• Klaviatura, tezkor tugmalar\n"
+            "• Internet xavfsizligi va antivirus\n\n"
+            "📄 2-oy: Office va Algoritmik Fikrlash\n"
+            "• Microsoft Word (hujjatlar, dizayn)\n"
+            "• Excel (jadval, formula, diagramma)\n"
+            "• PowerPoint (taqdimotlar)\n"
+            "• Algoritm va mantiqiy fikrlash asoslari\n\n"
+            "🎨 3-oy: Dizayn va IT Yo'nalishlarga Kirish\n"
+            "• Canva, Figma asoslari\n"
+            "• UI/UX tushunchalari\n"
+            "• IT yo'nalishlar overview (Frontend, Backend, Design)\n"
+            "• Yakuniy loyiha va taqdimot\n\n"
+            "🎯 <b>Kimlar uchun?</b>\n"
+            "• IT sohasiga 0 dan kirib kelmoqchi bo'lganlar\n"
+            "• Kompyuter va internetdan samarali foydalanishni o'rganmoqchi bo'lganlar\n"
+            "• Kelajakda dasturlash, dizayn yoki boshqa IT yo'nalishlarga poydevor qo'ymoqchi bo'lganlar\n\n"
+            "⭐ <b>Kurs afzalliklari</b>\n"
+            "• Kurs mutlaqo 0 dan boshlanadi\n"
+            "• Nazariya bilan birga ko'p amaliy mashg'ulotlar\n"
+            "• Office, dizayn, UI/UX va IT asoslari bitta kursda jamlangan\n"
+            "• Kurs oxirida real loyiha ustida ishlanadi\n"
+        ),
+        "faq": [
+            ("Bu kursga qatnashish uchun oldindan bilim kerakmi?",
+             "Yo'q, kurs to'liq 0 dan boshlanadi va yangi boshlovchilar uchun mos."),
+            ("Kurs davomiyligi qancha?", "Kurs 3 oy davom etadi va haftasiga reja asosida darslar o'tiladi."),
+            ("Darslar nazariymi yoki amaliy ham bormi?",
+             "Darslar asosan amaliy bo'lib, har bir mavzu mashqlar orqali mustahkamlanadi."),
+            ("Kurs tugagach nimalarni bilaman?",
+             "Kompyuter va internet asoslari, Office dasturlari, dizayn va UI/UX tushunchalari hamda real loyiha tajribasi."),
+            ("Kurs yakunida sertifikat beriladimi?",
+             "Ha, kursni muvaffaqiyatli tugatgan talabalarga sertifikat topshiriladi."),
+        ],
         "tariffs": {
             "Standart": {
                 "duration": "3 oy",
@@ -103,33 +297,6 @@ COURSES = {
             },
             "Premium": {
                 "duration": "3 oy",
-                "support_mentor": "Mavjud",
-                "extra_lessons": "Mavjud",
-                "practice": "Mavjud",
-                "job_guarantee": "Mavjud",
-            },
-        },
-    },
-    "Fullstack dasturlash": {
-        "duration": "14 oy",
-        "price_info": "Oyiga 800 000 so'm",
-        "tariffs": {
-            "Standart": {
-                "duration": "14 oy",
-                "support_mentor": "Mavjud",
-                "extra_lessons": "Yo'q",
-                "practice": "Mavjud",
-                "job_guarantee": "Yo'q",
-            },
-            "Intensiv": {
-                "duration": "14 oy",
-                "support_mentor": "Mavjud",
-                "extra_lessons": "Mavjud",
-                "practice": "Mavjud",
-                "job_guarantee": "Yo'q",
-            },
-            "Premium": {
-                "duration": "14 oy",
                 "support_mentor": "Mavjud",
                 "extra_lessons": "Mavjud",
                 "practice": "Mavjud",
