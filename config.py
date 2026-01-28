@@ -1,5 +1,5 @@
 """
-Configuration module for HR Bot
+Configuration module for HR Bot (aiogram version)
 Loads configuration from environment variables or .env file
 """
 import os
@@ -7,35 +7,45 @@ from typing import Optional
 
 try:
     from dotenv import load_dotenv
-    # Try to load .env file with error handling
+
     try:
-        load_dotenv(encoding='utf-8')
+        load_dotenv(encoding="utf-8")
     except UnicodeDecodeError:
-        # If UTF-8 fails, try to detect encoding or skip .env file
         import warnings
-        warnings.warn("Could not read .env file with UTF-8 encoding. Using environment variables only.")
-        # Try alternative encodings
+
+        warnings.warn(
+            "Could not read .env file with UTF-8 encoding. Using environment variables only."
+        )
         try:
-            load_dotenv(encoding='utf-16')
-        except:
+            load_dotenv(encoding="utf-16")
+        except Exception:
             pass
 except ImportError:
-    # If dotenv is not installed, continue with environment variables only
     import warnings
+
     warnings.warn("python-dotenv not installed. Using environment variables only.")
 
 # Telegram Bot Configuration
-TOKEN: str = os.getenv("BOT_TOKEN", "8423618425:AAGslrdY8jGmiHdEt65dyoUkWWwU8roORjE")
-ADMIN_ID: int = int(os.getenv("ADMIN_ID", "668618297"))
-GROUP_ID: int = int(os.getenv("GROUP_ID", "-4946035687"))
+TOKEN: str = os.getenv("BOT_TOKEN")  # no default!
+ADMIN_ID: int = int(os.getenv("ADMIN_ID", "0"))
+GROUP_ID: int = int(os.getenv("GROUP_ID", "0"))
 
 # Application Settings
-SESSION_TIMEOUT: int = int(os.getenv("SESSION_TIMEOUT", "3600"))  # 1 hour in seconds
-WEBHOOK_SECRET: Optional[str] = os.getenv("WEBHOOK_SECRET")  # Optional webhook secret for security
+SESSION_TIMEOUT: int = int(os.getenv("SESSION_TIMEOUT", "3600"))  # 1 hour
+WEBHOOK_HOST: str = os.getenv("WEBHOOK_HOST", "https://hrbot.geeksandijan.uz")
+WEBHOOK_PATH: str = os.getenv("WEBHOOK_PATH", f"/{TOKEN}") if TOKEN else "/"
+WEBHOOK_URL: str = WEBHOOK_HOST + WEBHOOK_PATH
+WEBHOOK_SECRET: Optional[str] = os.getenv("WEBHOOK_SECRET")
+
+WEBAPP_HOST: str = os.getenv("WEBAPP_HOST", "0.0.0.0")  # aiogram server host
+WEBAPP_PORT: int = int(os.getenv("WEBAPP_PORT", "8004"))  # aiogram server port
 
 # Validate required configuration
-if not TOKEN or TOKEN == "your_bot_token_here":
-    raise ValueError("BOT_TOKEN must be set in environment variables or .env file")
+if not TOKEN:
+    raise ValueError("BOT_TOKEN must be set in .env file")
 
 if not ADMIN_ID:
-    raise ValueError("ADMIN_ID must be set in environment variables or .env file")
+    raise ValueError("ADMIN_ID must be set in .env file")
+
+if not GROUP_ID:
+    raise ValueError("GROUP_ID must be set in .env file")
