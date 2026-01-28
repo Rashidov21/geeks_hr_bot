@@ -20,7 +20,14 @@ logger = logging.getLogger(__name__)
 
 router = Router()
 
-# Courses data
+"""
+Kurslar bo‘yicha barcha ma’lumotlar:
+- duration, price_info: qisqa info
+- description: uzun tavsif (HTML format)
+- faq: (savol, javob) juftliklari, umumiy FAQ uchun ham ishlatiladi
+- tariffs: tariflar bo‘yicha info
+"""
+
 COURSES = {
     "SMM": {
         "duration": "3 oy",
@@ -163,7 +170,7 @@ async def start_courses(callback: CallbackQuery, state: FSMContext):
 
 @router.callback_query(F.data.startswith("course:"))
 async def show_course_info(callback: CallbackQuery, state: FSMContext):
-    """Show course information and tariffs."""
+    """Show course information (description + basic info) and tariffs."""
     course_name = callback.data.split(":", 1)[1]
     if course_name not in COURSES:
         await callback.answer("Noto'g'ri kurs", show_alert=True)
@@ -173,6 +180,12 @@ async def show_course_info(callback: CallbackQuery, state: FSMContext):
     await state.update_data(course_name=course_name)
     await state.set_state(CoursesForm.choosing_tariff)
     
+    # 1) To‘liq kurs tavsifi (agar berilgan bo‘lsa)
+    description = course_data.get("description")
+    if description:
+        await callback.message.answer(description)
+    
+    # 2) Qisqa info va tarif tanlash
     text = (
         f"📚 <b>{course_name}</b>\n\n"
         f"⏱ Davomiyligi: {course_data['duration']}\n"

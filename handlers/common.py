@@ -16,12 +16,13 @@ from aiogram.fsm.context import FSMContext
 
 from config import ADMIN_ID
 from handlers.hr import cmd_hr_start
+from handlers.courses import COURSES
 
 logger = logging.getLogger(__name__)
 
 router = Router()
 
-# FAQ keywords and responses
+# FAQ keywords and responses (umumiy qisqa savollar)
 FAQ_RESPONSES = {
     "narx": (
         "💰 <b>Narxlar</b>\n\n"
@@ -68,6 +69,21 @@ FAQ_RESPONSES = {
         "Savollaringiz bo'lsa, '❓ Savol berish (Support)' tugmasini bosing."
     ),
 }
+
+# Kurslarga oid FAQ larni ham umumiy FAQ bo'limiga qo'shamiz
+# Kalit sifatida to'liq savol matni lower() ko'rinishida saqlanadi.
+COURSE_FAQ_RESPONSES: dict[str, str] = {}
+
+for course_name, data in COURSES.items():
+    for q, a in data.get("faq", []):
+        key = q.lower().strip()
+        # Bir xil savol bir necha kursda bo'lsa, birinchisi qoladi
+        if key not in COURSE_FAQ_RESPONSES:
+            COURSE_FAQ_RESPONSES[key] = (
+                f"📚 <b>{course_name}</b>\n\n"
+                f"❔ {q}\n\n"
+                f"{a}"
+            )
 
 
 @router.message(Command("start"))
@@ -204,8 +220,16 @@ async def faq_handler(message: Message, state: FSMContext):
     # Check for FAQ keywords
     text = (message.text or "").strip().lower()
     
+    # 1) Umumiy qisqa FAQ javoblari
     for keyword, response in FAQ_RESPONSES.items():
         if keyword in text:
+            await message.answer(response)
+            return
+
+    # 2) Kurslarga oid FAQ lar (foydalanuvchi savolni to'liq yoki
+    #    asosiy qismi bilan yozgan bo'lsa, mos javob qaytaramiz)
+    for question_text, response in COURSE_FAQ_RESPONSES.items():
+        if question_text in text:
             await message.answer(response)
             return
     
