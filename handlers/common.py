@@ -109,25 +109,32 @@ async def cmd_start(message: Message, state: FSMContext):
     chat_id = message.chat.id
 
     if chat_id == ADMIN_ID:
-        # Admin panel - keep existing admin interface
-        from handlers.admin import router as admin_router
-        # Admin will see admin-specific menu, but we'll also show main menu
-        reply_kb = ReplyKeyboardMarkup(
+        # Admin panel - alohida admin menu
+        admin_reply_kb = ReplyKeyboardMarkup(
             keyboard=[
                 [
                     KeyboardButton(text="📋 Oxirgi arizalar"),
                     KeyboardButton(text="📤 Export"),
-                ]
+                ],
+                [
+                    KeyboardButton(text="📝 Ishga ariza topshirish"),
+                    KeyboardButton(text="🧑‍💻 Kurslar haqida ma'lumot"),
+                ],
+                [
+                    KeyboardButton(text="❓ Savol berish (Support)"),
+                    KeyboardButton(text="📞 Kontaktlar / Manzil"),
+                ],
             ],
             resize_keyboard=True,
         )
         await message.answer(
-            "👋 Admin panel.\n"
-            "Pastdagi tugmalardan foydalaning yoki asosiy menyuni ko'ring:",
-            reply_markup=reply_kb,
+            "👋 <b>Admin panel</b>\n\n"
+            "Quyidagi tugmalardan foydalaning:",
+            reply_markup=admin_reply_kb
         )
+        return  # Admin uchun return qilamiz, umumiy menu ko'rsatilmaydi
     
-    # Main menu for all users
+    # Main menu for regular users
     reply_kb = ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text="📝 Ishga ariza topshirish")],
@@ -220,7 +227,7 @@ async def menu_contacts(message: Message):
         "⏰ <b>Ish vaqti:</b> 9:00 – 19:00 (Dushanba – Shanba)\n\n"
         "❓ Har qanday savol, taklif va yordam uchun bemalol yozing!"
     )
-    await message.answer(text)
+    await message.answer(text, disable_web_page_preview=True)
 
 
 @router.message(F.text == "🔄 Botni qayta ishga tushirish")
@@ -247,14 +254,14 @@ async def faq_handler(message: Message, state: FSMContext):
     # 1) Umumiy qisqa FAQ javoblari
     for keyword, response in FAQ_RESPONSES.items():
         if keyword in text:
-            await message.answer(response)
+            await message.answer(response, disable_web_page_preview=True)
             return
 
     # 2) Kurslarga oid FAQ lar (foydalanuvchi savolni to'liq yoki
     #    asosiy qismi bilan yozgan bo'lsa, mos javob qaytaramiz)
     for question_text, response in COURSE_FAQ_RESPONSES.items():
         if question_text in text:
-            await message.answer(response)
+            await message.answer(response, disable_web_page_preview=True)
             return
     
     # If no FAQ match, show main menu hint
