@@ -2,6 +2,7 @@
 Support handlers - Question/Support ticket flow
 """
 import logging
+import re
 from datetime import datetime
 from aiogram import Router, F
 from aiogram.types import (
@@ -38,13 +39,23 @@ class SupportForm(StatesGroup):
 
 
 def is_working_hours() -> bool:
-    """Check if current time is within working hours (08:00-18:00)."""
-    # Using server local time (adjust timezone if needed)
-    current_hour = datetime.now().hour
-    return 8 <= current_hour < 18
+    """
+    Check if current time is within working hours (09:00-19:00).
+    Uses UTC+5 (Uzbekistan timezone).
+    """
+    from datetime import timezone, timedelta
+    # Uzbekistan timezone (UTC+5)
+    uz_tz = timezone(timedelta(hours=5))
+    current_time = datetime.now(uz_tz)
+    current_hour = current_time.hour
+    # Working hours: 9:00 - 19:00 (Dushanba - Shanba)
+    return 9 <= current_hour < 19
 
 
-async def send_ticket_to_support_group(bot, ticket_id: int, user_id: int, username: str, category: str, question: str, voice_id: str | None = None):
+async def send_ticket_to_support_group(
+    bot, ticket_id: int, user_id: int, username: str, category: str, question: str, 
+    voice_id: str | None = None, phone: str | None = None
+):
     """Send support ticket to support group."""
     is_night = not is_working_hours()
     night_label = "[Night queue] " if is_night else ""
@@ -53,8 +64,14 @@ async def send_ticket_to_support_group(bot, ticket_id: int, user_id: int, userna
         f"{night_label}🎫 <b>Support Ticket #{ticket_id}</b>\n\n"
         f"👤 User: @{username or 'N/A'} (ID: {user_id})\n"
         f"📂 Kategoriya: {category}\n"
-        f"❓ Savol:\n{question}"
     )
+    
+    if phone:
+        text += f"📞 Telefon: {phone}\n"
+    else:
+        text += "📞 Telefon: ko'rsatilmagan\n"
+    
+    text += f"\n❓ Savol:\n{question}"
     
     if voice_id:
         text += f"\n\n🎤 Ovozli xabar mavjud (file_id: {voice_id})"
@@ -117,8 +134,18 @@ async def process_question_text(message: Message, state: FSMContext):
     
     await state.update_data(question=question, question_voice_id=None)
     
-    # Check if phone number is mentioned in question
-    phone_in_text = validate_phone(question) if any(char.isdigit() for char in question) else False
+    # Check if phone number is mentioned in question (simple check)
+    # Extract potential phone numbers from text
+    phone_pattern = r'\+?998\d{9}|\d{9,12}'
+    phone_matches = re.findall(phone_pattern, question)
+    phone_in_text = False
+    if phone_matches:
+        # Try to validate the first match
+        for match in phone_matches:
+            if validate_phone(match):
+                phone_in_text = True
+                await state.update_data(phone=match)
+                break
     
     if not phone_in_text:
         await state.set_state(SupportForm.asking_phone)
@@ -183,6 +210,7 @@ async def finish_support_ticket(message: Message, state: FSMContext):
         ticket_id = save_support_ticket({
             "user_id": message.from_user.id,
             "username": message.from_user.username,
+            "phone": data.get("phone"),
             "category": data.get("category"),
             "question": data.get("question"),
             "question_voice_id": data.get("question_voice_id"),
@@ -200,6 +228,7 @@ async def finish_support_ticket(message: Message, state: FSMContext):
             category=data.get("category"),
             question=data.get("question"),
             voice_id=data.get("question_voice_id"),
+            phone=data.get("phone"),
         )
         
         # User response

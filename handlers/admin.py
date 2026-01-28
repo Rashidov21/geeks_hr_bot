@@ -8,7 +8,7 @@ from aiogram.filters import Command, CommandObject
 from aiogram.types import Message, FSInputFile
 
 from config import ADMIN_ID, SUPPORT_GROUP_ID
-from db import get_last_applicants, get_all_applicants, get_support_tickets
+from db import get_last_applicants, get_all_applicants, get_support_tickets, export_support_tickets_to_excel
 import openpyxl
 
 logger = logging.getLogger(__name__)
@@ -169,27 +169,63 @@ async def cmd_answer(message: Message, command: CommandObject):
 
 
 @router.message(Command("support_tickets"))
-async def cmd_support_tickets(message: Message):
-    """Show last support tickets for admin."""
+async def cmd_support_tickets(message: Message, command: CommandObject):
+    """Show last support tickets for admin (optionally filtered by category)."""
     if message.chat.id != ADMIN_ID:
         return
 
+    category = None
+    if command.args:
+        category = command.args.strip()
+
     try:
-        tickets = get_support_tickets(limit=5)
+        tickets = get_support_tickets(limit=10, category=category)
         if not tickets:
-            await message.answer("📨 Support so'rovlar topilmadi.")
+            await message.answer(f"📨 Support so'rovlar topilmadi{f' ({category})' if category else ''}.")
             return
 
-        text = "📨 Oxirgi support so'rovlar:\n\n"
+        title = "📨 Oxirgi support so'rovlar"
+        if category:
+            title += f" ({category})"
+        text = title + ":\n\n"
+
         for ticket in tickets:
+            ticket_id, user_id, username, phone, cat, question, voice_id, created_at = ticket
             text += (
-                f"🎫 Ticket #{ticket[0]}\n"
-                f"👤 User: @{ticket[2] or 'N/A'} (ID: {ticket[1]})\n"
-                f"📂 Kategoriya: {ticket[3]}\n"
-                f"❓ Savol: {ticket[4][:50]}...\n"
-                f"⏰ {ticket[6]}\n\n"
+                f"🎫 Ticket #{ticket_id}\n"
+                f"👤 User: @{username or 'N/A'} (ID: {user_id})\n"
+                f"📂 Kategoriya: {cat}\n"
+                f"📞 Telefon: {phone or 'ko'rsatilmagan'}\n"
+                f"❓ Savol: {(question or 'Ovozli xabar').strip()[:80]}...\n"
+                f"⏰ {created_at}\n\n"
             )
         await message.answer(text)
     except Exception as e:
         logger.exception(f"Error getting support tickets: {e}")
         await message.answer("❌ Xatolik: Support so'rovlarni olishda muammo.")
+
+
+@router.message(Command("export_support"))
+async def cmd_export_support(message: Message, command: CommandObject):
+    """
+    Export support tickets to Excel (optionally by category).
+    Usage: /export_support [Kategoriya]
+    """
+    if message.chat.id != ADMIN_ID:
+        return
+
+    category = None
+    if command.args:
+        category = command.args.strip()
+
+    file_name = export_support_tickets_to_excel(category)
+    if not file_name:
+        await message.answer(f"{category or 'Umumiy'} bo'yicha support so'rovlar topilmadi.")
+        return
+
+    try:
+        file = FSInputFile(file_name)
+        await message.answer_document(file)
+    finally:
+        if os.path.exists(file_name):
+            os.remove(file_name)

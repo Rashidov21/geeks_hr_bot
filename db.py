@@ -95,6 +95,7 @@ def ensure_db() -> None:
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id INTEGER NOT NULL,
                     username TEXT,
+                    phone TEXT,
                     category TEXT NOT NULL,
                     question TEXT,
                     question_voice_id TEXT,
@@ -106,6 +107,17 @@ def ensure_db() -> None:
                 )
             """
             )
+            
+            # Check and add phone column if missing (for existing tables)
+            c.execute("PRAGMA table_info(support_tickets)")
+            existing_cols = {row[1] for row in c.fetchall()}
+            if "phone" not in existing_cols:
+                try:
+                    c.execute("ALTER TABLE support_tickets ADD COLUMN phone TEXT")
+                except Exception as e:
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.exception(f"Cannot add column phone to support_tickets: {e}")
             
             # Create course_leads table
             c.execute(
@@ -236,12 +248,13 @@ def save_support_ticket(data: Dict[str, Any]) -> int:
         c.execute(
             """
             INSERT INTO support_tickets
-            (user_id, username, category, question, question_voice_id, status)
-            VALUES (?, ?, ?, ?, ?, ?)
+            (user_id, username, phone, category, question, question_voice_id, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
         """,
             (
                 data.get("user_id"),
                 data.get("username"),
+                data.get("phone"),
                 data.get("category"),
                 data.get("question"),
                 data.get("question_voice_id"),
@@ -252,28 +265,72 @@ def save_support_ticket(data: Dict[str, Any]) -> int:
         return c.lastrowid
 
 
-def get_support_tickets(limit: int = 5) -> List[Tuple]:
+def get_support_tickets(limit: int = 5, category: str | None = None) -> List[Tuple]:
     """
-    Return last N support tickets.
+    Return last N support tickets, optionally filtered by category.
     
     Args:
         limit: Maximum number of records to return
+        category: Filter by category (optional)
     
     Returns:
-        List of ticket records
+        List of ticket records (id, user_id, username, phone, category, question, question_voice_id, created_at)
     """
     with db_connection() as conn:
         c = conn.cursor()
-        c.execute(
-            """
-            SELECT id, user_id, username, category, question, question_voice_id, created_at
-            FROM support_tickets
-            ORDER BY id DESC
-            LIMIT ?
-        """,
-            (limit,),
-        )
+        if category:
+            c.execute(
+                """
+                SELECT id, user_id, username, phone, category, question, question_voice_id, created_at
+                FROM support_tickets
+                WHERE category=?
+                ORDER BY id DESC
+                LIMIT ?
+            """,
+                (category, limit),
+            )
+        else:
+            c.execute(
+                """
+                SELECT id, user_id, username, phone, category, question, question_voice_id, created_at
+                FROM support_tickets
+                ORDER BY id DESC
+                LIMIT ?
+            """,
+                (limit,),
+            )
         return c.fetchall()
+
+
+def export_support_tickets_to_excel(category: str | None = None) -> str | None:
+    """
+    Export support tickets to Excel. Returns file path or None.
+    """
+    import openpyxl
+    rows = get_support_tickets(limit=1000, category=category)
+    if not rows:
+        return None
+
+    file_name = f"support_tickets_{category}.xlsx" if category else "support_tickets_all.xlsx"
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Support tickets"
+
+    headers = [
+        "ID",
+        "User ID",
+        "Username",
+        "Phone",
+        "Category",
+        "Question",
+        "Voice ID",
+        "Created at",
+    ]
+    ws.append(headers)
+    for row in rows:
+        ws.append(row)
+    wb.save(file_name)
+    return file_name
 
 
 def save_course_lead(data: Dict[str, Any]) -> int:

@@ -92,16 +92,20 @@ def create_app() -> web.Application:
 
 async def main():
     """Main entry point."""
-    app = create_app()
-    runner = web.AppRunner(app)
-    await runner.setup()
-    site = web.TCPSite(runner, WEBAPP_HOST, WEBAPP_PORT)
-    logger.info(f"Starting webhook server on {WEBAPP_HOST}:{WEBAPP_PORT}")
-    await site.start()
+    try:
+        app = create_app()
+        runner = web.AppRunner(app)
+        await runner.setup()
+        site = web.TCPSite(runner, WEBAPP_HOST, WEBAPP_PORT)
+        logger.info(f"Starting webhook server on {WEBAPP_HOST}:{WEBAPP_PORT}")
+        await site.start()
 
-    # Keep running
-    while True:
-        await asyncio.sleep(3600)
+        # Keep running
+        while True:
+            await asyncio.sleep(3600)
+    except Exception as e:
+        logger.exception(f"Fatal error in main: {e}")
+        raise
 
 
 if __name__ == "__main__":
