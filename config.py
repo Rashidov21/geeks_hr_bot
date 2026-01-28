@@ -29,6 +29,7 @@ except ImportError:
 TOKEN: str = os.getenv("BOT_TOKEN")  # no default!
 ADMIN_ID: int = int(os.getenv("ADMIN_ID", "0"))
 GROUP_ID: int = int(os.getenv("GROUP_ID", "0"))
+SUPPORT_GROUP_ID: int = int(os.getenv("SUPPORT_GROUP_ID", "0"))
 
 # Application Settings
 SESSION_TIMEOUT: int = int(os.getenv("SESSION_TIMEOUT", "3600"))  # 1 hour
@@ -49,3 +50,7 @@ if not ADMIN_ID:
 
 if not GROUP_ID:
     raise ValueError("GROUP_ID must be set in .env file")
+
+# SUPPORT_GROUP_ID is optional, defaults to GROUP_ID if not set
+if not SUPPORT_GROUP_ID:
+    SUPPORT_GROUP_ID = GROUP_ID

@@ -88,6 +88,40 @@ def ensure_db() -> None:
                         logger = logging.getLogger(__name__)
                         logger.exception(f"Cannot add column {col}: {e}")
             
+            # Create support_tickets table
+            c.execute(
+                """
+                CREATE TABLE IF NOT EXISTS support_tickets (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    username TEXT,
+                    category TEXT NOT NULL,
+                    question TEXT,
+                    question_voice_id TEXT,
+                    status TEXT DEFAULT 'pending',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    answered_at TIMESTAMP,
+                    answered_by INTEGER,
+                    answer_text TEXT
+                )
+            """
+            )
+            
+            # Create course_leads table
+            c.execute(
+                """
+                CREATE TABLE IF NOT EXISTS course_leads (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    username TEXT,
+                    course_name TEXT NOT NULL,
+                    tariff TEXT NOT NULL,
+                    phone TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """
+            )
+            
             conn.commit()
     except Exception as e:
         import logging
@@ -185,3 +219,88 @@ def get_all_applicants(vacancy: str | None = None) -> List[Tuple]:
         else:
             c.execute("SELECT * FROM applicants")
         return c.fetchall()
+
+
+def save_support_ticket(data: Dict[str, Any]) -> int:
+    """
+    Save support ticket and return inserted id.
+    
+    Args:
+        data: Dictionary containing ticket data
+    
+    Returns:
+        Inserted row ID
+    """
+    with db_connection() as conn:
+        c = conn.cursor()
+        c.execute(
+            """
+            INSERT INTO support_tickets
+            (user_id, username, category, question, question_voice_id, status)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """,
+            (
+                data.get("user_id"),
+                data.get("username"),
+                data.get("category"),
+                data.get("question"),
+                data.get("question_voice_id"),
+                data.get("status", "pending"),
+            ),
+        )
+        conn.commit()
+        return c.lastrowid
+
+
+def get_support_tickets(limit: int = 5) -> List[Tuple]:
+    """
+    Return last N support tickets.
+    
+    Args:
+        limit: Maximum number of records to return
+    
+    Returns:
+        List of ticket records
+    """
+    with db_connection() as conn:
+        c = conn.cursor()
+        c.execute(
+            """
+            SELECT id, user_id, username, category, question, question_voice_id, created_at
+            FROM support_tickets
+            ORDER BY id DESC
+            LIMIT ?
+        """,
+            (limit,),
+        )
+        return c.fetchall()
+
+
+def save_course_lead(data: Dict[str, Any]) -> int:
+    """
+    Save course lead and return inserted id.
+    
+    Args:
+        data: Dictionary containing lead data
+    
+    Returns:
+        Inserted row ID
+    """
+    with db_connection() as conn:
+        c = conn.cursor()
+        c.execute(
+            """
+            INSERT INTO course_leads
+            (user_id, username, course_name, tariff, phone)
+            VALUES (?, ?, ?, ?, ?)
+        """,
+            (
+                data.get("user_id"),
+                data.get("username"),
+                data.get("course_name"),
+                data.get("tariff"),
+                data.get("phone"),
+            ),
+        )
+        conn.commit()
+        return c.lastrowid
