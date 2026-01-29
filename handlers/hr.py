@@ -343,21 +343,31 @@ async def finish_application(message: Message, state: FSMContext):
         await state.clear()
         return
 
+    # Bosh menyu tugmasi
+    main_menu_kb = ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="🏠 Bosh menyu")],
+        ],
+        resize_keyboard=True,
+    )
+    
     try:
         app_id = save_application(data)
         logger.info(f"Application saved with id {app_id}")
         await send_application_to_admin(message.bot, data)
         await message.answer(
-            "✅ Rahmat! Arizangiz qabul qilindi. Tez orada siz bilan bog'lanamiz."
+            "✅ Rahmat! Arizangiz qabul qilindi. Tez orada siz bilan bog'lanamiz.",
+            reply_markup=main_menu_kb
         )
     except ValueError as e:
         # Duplicate application or validation error
         logger.warning(f"Application validation error: {e}")
-        await message.answer(f"❗ {str(e)}")
+        await message.answer(f"❗ {str(e)}", reply_markup=main_menu_kb)
     except Exception as e:
         logger.exception(f"Error saving application: {e}")
         await message.answer(
-            "❗ Arizani saqlashda xatolik yuz berdi. Iltimos, qayta urinib ko'ring yoki adminga murojaat qiling."
+            "❗ Arizani saqlashda xatolik yuz berdi. Iltimos, qayta urinib ko'ring yoki adminga murojaat qiling.",
+            reply_markup=main_menu_kb
         )
 
     await state.clear()

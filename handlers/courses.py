@@ -435,14 +435,32 @@ async def process_course_phone_contact(message: Message, state: FSMContext):
             })
             logger.info(f"Course lead saved with id {lead_id}")
             
+            # Bosh menyu tugmasi
+            from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+            main_menu_kb = ReplyKeyboardMarkup(
+                keyboard=[
+                    [KeyboardButton(text="🏠 Bosh menyu")],
+                ],
+                resize_keyboard=True,
+            )
+            
             await message.answer(
                 "✅ Rahmat! Telefon raqamingiz qabul qilindi.\n\n"
-                "Menejerimiz tez orada siz bilan bog'lanadi va kurs haqida batafsil ma'lumot beradi."
+                "Menejerimiz tez orada siz bilan bog'lanadi va kurs haqida batafsil ma'lumot beradi.",
+                reply_markup=main_menu_kb
             )
         except Exception as e:
             logger.exception(f"Error saving course lead: {e}")
+            from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+            main_menu_kb = ReplyKeyboardMarkup(
+                keyboard=[
+                    [KeyboardButton(text="🏠 Bosh menyu")],
+                ],
+                resize_keyboard=True,
+            )
             await message.answer(
-                "❗ Telefon raqamni saqlashda xatolik yuz berdi. Iltimos, qayta urinib ko'ring."
+                "❗ Telefon raqamni saqlashda xatolik yuz berdi. Iltimos, qayta urinib ko'ring.",
+                reply_markup=main_menu_kb
             )
         finally:
             await state.clear()
@@ -486,16 +504,34 @@ async def process_course_phone(message: Message, state: FSMContext):
         
         await message.bot.send_message(chat_id=GROUP_ID, text=lead_text)
         
+        # Bosh menyu tugmasi
+        from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+        main_menu_kb = ReplyKeyboardMarkup(
+            keyboard=[
+                [KeyboardButton(text="🏠 Bosh menyu")],
+            ],
+            resize_keyboard=True,
+        )
+        
         await message.answer(
             "✅ Rahmat! Telefon raqamingiz qabul qilindi.\n\n"
             "Menejerimiz tez orada sizga qo'ng'iroq qilib, mos tarif va aniq narxlar "
-            "haqida ma'lumot beradi."
+            "haqida ma'lumot beradi.",
+            reply_markup=main_menu_kb
         )
         
     except Exception as e:
         logger.exception(f"Error saving course lead: {e}")
+        from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+        main_menu_kb = ReplyKeyboardMarkup(
+            keyboard=[
+                [KeyboardButton(text="🏠 Bosh menyu")],
+            ],
+            resize_keyboard=True,
+        )
         await message.answer(
-            "❗ Telefon raqamni saqlashda xatolik yuz berdi. Iltimos, qayta urinib ko'ring."
+            "❗ Telefon raqamni saqlashda xatolik yuz berdi. Iltimos, qayta urinib ko'ring.",
+            reply_markup=main_menu_kb
         )
     
     await state.clear()

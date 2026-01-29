@@ -291,17 +291,28 @@ async def finish_support_ticket(message: Message, state: FSMContext):
             phone=data.get("phone"),
         )
         
+        # Bosh menyu tugmasi
+        from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+        main_menu_kb = ReplyKeyboardMarkup(
+            keyboard=[
+                [KeyboardButton(text="🏠 Bosh menyu")],
+            ],
+            resize_keyboard=True,
+        )
+        
         # User response
         is_night = not is_working_hours()
         if is_night:
             await message.answer(
                 "✅ Savolingiz qabul qilindi.\n\n"
                 "⚠️ Savolingiz ish vaqtidan tashqarida qabul qilindi. "
-                "Operatorlar ertasi kuni javob berishadi."
+                "Operatorlar ertasi kuni javob berishadi.",
+                reply_markup=main_menu_kb
             )
         else:
             await message.answer(
-                "✅ Savolingiz qabul qilindi. Operatorlar tez orada siz bilan bog'lanishadi."
+                "✅ Savolingiz qabul qilindi. Operatorlar tez orada siz bilan bog'lanishadi.",
+                reply_markup=main_menu_kb
             )
         
         # If phone was provided, mention it
@@ -313,8 +324,16 @@ async def finish_support_ticket(message: Message, state: FSMContext):
         
     except Exception as e:
         logger.exception(f"Error saving support ticket: {e}")
+        from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+        main_menu_kb = ReplyKeyboardMarkup(
+            keyboard=[
+                [KeyboardButton(text="🏠 Bosh menyu")],
+            ],
+            resize_keyboard=True,
+        )
         await message.answer(
-            "❗ Savolni saqlashda xatolik yuz berdi. Iltimos, qayta urinib ko'ring."
+            "❗ Savolni saqlashda xatolik yuz berdi. Iltimos, qayta urinib ko'ring.",
+            reply_markup=main_menu_kb
         )
     
     await state.clear()

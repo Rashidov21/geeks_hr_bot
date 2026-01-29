@@ -240,6 +240,12 @@ async def restart_bot(message: Message, state: FSMContext):
     await cmd_start(message, state)
 
 
+@router.message(F.text.in_(["🏠 Bosh menyu", "Bosh menyu", "🏠", "/menu"]))
+async def back_to_main_menu(message: Message, state: FSMContext):
+    """Handle back to main menu button."""
+    await cmd_start(message, state)
+
+
 @router.message()
 async def faq_handler(message: Message, state: FSMContext):
     """
